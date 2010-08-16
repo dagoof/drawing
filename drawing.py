@@ -38,11 +38,12 @@ def index():
 @app.route('/api/post', methods=['GET','POST'])
 def post():
     data=request.json
-    print data
     session_id=data.get('session_id')
     coordinates=data.get('coordinates')
-    brush=g.Brush.get(session_id, {})
-    brush.get('coordinates', {}).update(coordinates)
+    brush=g.Brush.get(session_id, {'_id':session_id})
+    tmp_coords=brush.get('coordinates', {})
+    tmp_coords.update(coordinates)
+    brush.update({'coordinates':tmp_coords})
     g.Brush.update([brush])
     return jsonify(status=True)
 

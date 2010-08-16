@@ -7,7 +7,6 @@ function dumpdata(d){
         dataType:'json',
         contentType:'application/json; charset=utf-8',
         success:function(response){
-            alert('success');
             d.coordinates={};
         },
         data:JSON.stringify(d),
