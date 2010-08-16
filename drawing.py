@@ -13,7 +13,7 @@ app=Flask(__name__)
 app.config.from_object(__name__)
 
 def init_db():
-    dbs=['brushes','palettes','paths']
+    dbs=['brush','palette','path']
     for db in dbs:
         if db in COUCH:
             COUCH.delete(db)
@@ -21,7 +21,9 @@ def init_db():
 
 @app.before_request
 def before_request():
-    pass
+    g.Brush=COUCH['brush']
+    g.Palette=COUCH['palette']
+    g.Path=COUCH['path']
 
 @app.after_request
 def after_request(response):
@@ -30,11 +32,18 @@ def after_request(response):
 @app.route('/')
 def index():
     #print vars(request)
-    return render_template('index.html')
+    sessionid=uuid.uuid4().hex
+    return render_template('index.html', sessionid=sessionid)
 
 @app.route('/api/post', methods=['GET','POST'])
 def post():
-    COUCH['brushes'][uuid.uuid4().hex]=request.json
+    data=request.json
+    print data
+    session_id=data.get('session_id')
+    coordinates=data.get('coordinates')
+    brush=g.Brush.get(session_id, {})
+    brush.get('coordinates', {}).update(coordinates)
+    g.Brush.update([brush])
     return jsonify(status=True)
 
 if __name__=='__main__':

@@ -1,0 +1,50 @@
+Ideas for potential Schemas
+    a. Self-Contained
+
+
+ImageId:
+  brushes:
+      brushid:
+          meta: name, timestamp, ...
+          draw_function: 'javascriptfunction'
+      ...
+  palettes:
+      paletteid:
+          meta: name, timestamp, ...
+          opacity: ...
+          colors: ...
+      ...
+  paths:
+      pathid:
+          meta: id, timestamp, ...
+          palette: palleteid
+          brush: brushid
+          coordinates: (_ts, x, y), ...
+
+This allows for all images to be self-contained and easy to visualize as a
+single entity however it obviously takes a shit on any modularity you might
+want and we probably also want to store files as separate files, ie:
+    imagerepos/examplerepo/[brushes.json, palettes.json, paths.json, image.json]
+
+if this is the case we would probably be better served using something akin to 
+
+Images:
+    imageid:
+        meta: ...
+        commithistory: timestamp: id, ...
+        paths: pathid: ?, ...
+        layers: ... ?   \
+        brushes: ... ?  - These might not be necessary
+        palettes: ... ? /
+        contributors: ?
+        (essentially at some point this just becomes a shortcut 
+                to avoid pulling from repo constantly)
+    ...
+Paths:
+    pathid:
+        meta: ..., [palette,brush?]
+        palette: ...
+        brush: ...
+        coordinates: (_ts, x, y), ...
+Palettes:
+    pathid
