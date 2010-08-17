@@ -35,10 +35,12 @@ def index():
     sessionid=uuid.uuid4().hex
     return render_template('index.html', sessionid=sessionid)
 
-@app.route('/api/post', methods=['GET','POST'])
+@app.route('/api/post', methods=['POST'])
 def post():
     data=request.json
+    print data
     session_id=data.get('session_id')
+    print session_id
     coordinates=data.get('coordinates')
     brush=g.Brush.get(session_id, {'_id':session_id})
     tmp_coords=brush.get('coordinates', {})
@@ -46,6 +48,13 @@ def post():
     brush.update({'coordinates':tmp_coords})
     g.Brush.update([brush])
     return jsonify(status=True)
+
+@app.route('/api/commit', methods=['POST'])
+def commit():
+    data=request.json
+    print data
+    return jsonify(data)
+
 
 if __name__=='__main__':
     app.run(host='0.0.0.0', port=8096)
