@@ -22,15 +22,13 @@ function call_commit(){
         success:function(response){
             coord_data._last_commit=(new Date()).getTime();
         },
-        data:JSON.stringify({'session_id':session_id});
+        data:JSON.stringify(coord_data),
     });
 }
 
-/*
 $(document).mousemove(function(e){
     coord_data.coordinates[(new Date()).getTime()]=[e.pageX, e.pageY];
 });
-*/
 
 function dupdate(to, from){
     for(var e in from){
