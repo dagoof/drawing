@@ -48,3 +48,14 @@ Paths:
         coordinates: (_ts, x, y), ...
 Palettes:
     pathid
+    ... and so on
+
+
+Our revision system will work as follows
+
+commits don't need a reference point
+Commits:
+    commitid:
+        added:{}
+        removed:{}
+        

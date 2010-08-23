@@ -14,11 +14,7 @@ app=Flask(__name__)
 app.config.from_object(__name__)
 
 def init_db():
-    if os.path.exists(REPO_DIR):
-        os.rmdir(REPO_DIR)
-    os.mkdir(REPO_DIR)
-
-    dbs=['brush','palette','path']
+    dbs=['brush','palette','path','commit']
     for db in dbs:
         if db in COUCH:
             COUCH.delete(db)
@@ -29,6 +25,7 @@ def before_request():
     g.Brush=COUCH['brush']
     g.Palette=COUCH['palette']
     g.Path=COUCH['path']
+    g.Commit=COUCH['commit']
 
 @app.after_request
 def after_request(response):
