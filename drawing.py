@@ -43,6 +43,7 @@ def post():
     data=request.json
     session_id=data.get('session_id')
     coordinates=data.get('coordinates')
+    uid=uuid.uuid1().hex
     brush=g.Brush.get(session_id, {'_id':session_id})
     tmp_coords=brush.get('coordinates', {})
     tmp_coords.update(coordinates)
