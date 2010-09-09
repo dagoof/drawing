@@ -75,11 +75,6 @@ def dict_diff(a, b, path=[]):
     else:
         return all_removed, all_added
 
-aa=OwnDict({'a':'b'})
-bb=OwnDict({'c':'d'})
-
 sa={'a':'b', 'b':'c', 'd':[1,2,3,4, {'haha':'this is some nested shit', 'lol':['its', 'really', 'nested']}], 'e':{'f':'g', 'h':'l'}, 'f':'g'}
 sb={'a':'b', 'b':'b', 'd':[1,3,2], 'e':{'f':'f'}, 'g':'i'}
-
-tetser={0: {1: {0: 1, 1: 2, 2: 3, 3: 5, 33: 22, 10: 11}, 2: {33: 5, 22: {1: {55: 3}, 2: 3}}}}
 
