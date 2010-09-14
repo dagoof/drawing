@@ -54,7 +54,6 @@ def post():
 @app.route('/api/commit', methods=['POST'])
 def commit():
     data=request.json
-    print data
     session_id=data.get('session_id')
     brush=g.Brush.get(session_id, {'_id':session_id})
     with open(os.path.join(REPO_DIR, session_id, 'brush.json'), 'w') as fout:

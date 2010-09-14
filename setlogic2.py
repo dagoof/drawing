@@ -6,6 +6,42 @@ def tunnel_to_destination(path, into={}):
         this_section=this_section[index]
     return into
 
+def dict_remove(into, *paths):
+    """
+    Dictionary removal that accepts slices as arguments. Useful for dumping 
+    out sub-dimensions of a dictionary when managing a huge structure.
+        - Create a path for each key to be removed
+        - Ensure entire path exists within structure
+        - Remove path
+    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (0,2))
+    {1: {1: 2, 2: 3}}
+    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (1,2), (1,))
+    {0: 1, 1: {2: 3}, 2: {2: 3}}
+    """
+    def paths_from_list(paths, sofar=()):
+        if paths:
+            for path in paths[0]:
+                for x in paths_from_list(paths[1:], sofar+(path,)):
+                    yield x
+        else:
+            yield sofar
+    def ensure_subpath_exists(into, path):
+        this_subsection=into
+        for elem in path:
+            if elem in this_subsection:
+                this_subsection=this_subsection[elem]
+            else:
+                return False
+        return True
+    for path in paths_from_list(paths):
+        if ensure_subpath_exists(into, path):
+            this_subsection=into
+            for elem in path[:-1]:
+                this_subsection=this_subsection[elem]
+            del this_subsection[path[-1]]
+    return into
+
+
 def dict_insert(into, _from):
     """
     Proper dictionary insert that inserts at the deepest possible level as
