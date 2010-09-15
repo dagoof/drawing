@@ -6,7 +6,7 @@ def tunnel_to_destination(path, into={}):
         this_section=this_section[index]
     return into
 
-def dict_remove(into, *paths):
+def dict_remove_from_paths(into, *paths):
     """
     Dictionary removal that accepts slices as arguments. Useful for dumping 
     out sub-dimensions of a dictionary when managing a huge structure.
@@ -41,6 +41,25 @@ def dict_remove(into, *paths):
             del this_subsection[path[-1]]
     return into
 
+def dict_remove(into, _from):
+    """
+    Dict-remove that removes a dict from another dict, less usable than slice
+    remove for personal use but for removing diffs this is what is necessary.
+    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, {1:{1:2}})
+    {0: 1, 1: {2: 3}, 2: {1: 2, 2: 3}}
+    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, {1:{1:2, 2:3}, 2:{1:2}})
+    {0: 1, 1: {}, 2: {2: 3}}
+    """
+    for path, val in create_paths(_from):
+        this_section=into
+        for index in path[:-1]:
+            if index not in this_section:
+                break
+            this_section=this_section[index]
+        if this_section[path[-1]]==val:
+            del this_section[path[-1]]
+    return into
+
 
 def dict_insert(into, _from):
     """
@@ -51,6 +70,12 @@ def dict_insert(into, _from):
     that {0: {1: 2}}.insert({0: {1: 3}}) would still replace {1: 2} with {1: 3} 
     but in the case of the initial example, would instead return 
     {0: {1: 2, 3: 4}}.
+    >>> dict_insert({0:{1:2}}, {0:{3:4}})
+    {0: {1: 2, 3: 4}}
+    >>> dict_insert({0:{1:2}}, {0:{1:3}})
+    {0: {1: 3}}
+    >>> dict_insert({0:{1:2}}, {0:{1:3, 3:4}})
+    {0: {1: 3, 3: 4}}
     """
     for path, val in create_paths(_from):
         this_section=into
