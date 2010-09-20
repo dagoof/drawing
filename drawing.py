@@ -1,6 +1,9 @@
 import re, os, sys, datetime, time, couchdb, uuid, json
-from flask import Flask, jsonify, request, redirect, url_for, render_template, g, session, abort
-from wtforms import Form, BooleanField, TextField, TextAreaField, IntegerField, FloatField, DecimalField, validators, ValidationError
+from flask import Flask, jsonify, request, redirect, url_for, render_template,\
+    g, session, abort
+from wtforms import Form, BooleanField, TextField, TextAreaField, IntegerField,\
+    FloatField, DecimalField, validators, ValidationError
+from setlogic import dict_insert, dict_remove, dict_remove_from_paths
 from contextlib import closing
 from functools import wraps
 
@@ -14,7 +17,7 @@ app=Flask(__name__)
 app.config.from_object(__name__)
 
 def init_db():
-    dbs=['brush','palette','path','commit']
+    dbs=['brush','palette','path','revision']
     for db in dbs:
         if db in COUCH:
             COUCH.delete(db)
@@ -25,7 +28,8 @@ def before_request():
     g.Brush=COUCH['brush']
     g.Palette=COUCH['palette']
     g.Path=COUCH['path']
-    g.Commit=COUCH['commit']
+    g.Revision=COUCH['revision']
+    g.dbs={'brush': g.Brush, 'palette': g.Palette, 'path': g.Path}
 
 @app.after_request
 def after_request(response):
@@ -54,10 +58,22 @@ def post():
 @app.route('/api/commit', methods=['POST'])
 def commit():
     data=request.json
-    session_id=data.get('session_id')
-    brush=g.Brush.get(session_id, {'_id':session_id})
-    with open(os.path.join(REPO_DIR, session_id, 'brush.json'), 'w') as fout:
-        fout.write(json.dumps(brush, indent=4))
+    uid=uuid.uuid1().hex
+    session_id, _last_commit=(data.get(x) for x in ('session_id', 'last_commit'))
+    document_data=data.get('data', {})
+    commit={'_id': uid, 'meta': 
+            {'session_id': session_id, '_last_commit': _last_commit,
+                '_timestamp': time.time()}}
+    for name, db in g.dbs.items():
+        if name in document_data:
+            this_data=document_data.get(name)
+            current=db.get(session_id, {'_id': session_id})
+            dict_insert(current, this_data)
+            commit_data={name: {'_id': session_id, 'added': this_data, 'removed': {}}}
+            dict_insert(commit, commit_data)
+            db.update([current])
+
+    g.Revision.update([commit])
     return jsonify({'status':True})
 
 

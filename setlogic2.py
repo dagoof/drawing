@@ -13,9 +13,9 @@ def dict_remove_from_paths(into, *paths):
         - Create a path for each key to be removed
         - Ensure entire path exists within structure
         - Remove path
-    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (0,2))
+    >>> dict_remove_from_paths({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (0,2))
     {1: {1: 2, 2: 3}}
-    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (1,2), (1,))
+    >>> dict_remove_from_paths({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (1,2), (1,))
     {0: 1, 1: {2: 3}, 2: {2: 3}}
     """
     def paths_from_list(paths, sofar=()):
@@ -92,8 +92,10 @@ def create_paths(d, path=()):
     Recursively descends into a dict structure yielding path-value pairs as
     they are discovered for every leaf in the structure. This has the quality
     of returning nothing for a dict with no leaves such as {0: {1: {}}}.
-    Properly structured dicts will return something similar to the following:
-        {0: {1: 2, 3: {4: 5}}, 6: 7} -> {(0, 1): 2, (0, 3, 4): 5, (6,): 7}
+    >>> dict(create_paths({0: {1: {5: {20: {}}}}}))
+    {}
+    >>> dict(create_paths({0: {1: 2, 3: {4: 5}}, 6: 7}))
+    {(0, 1): 2, (0, 3, 4): 5, (6,): 7}
     """
     for k,v in d.items():
         if isinstance(v, type({})):

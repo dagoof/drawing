@@ -1,113 +1,104 @@
-a=set([1, 2, 3])
-b=set([1, 2])
+def tunnel_to_destination(path, into={}):
+    this_section=into
+    for index in path:
+        if index not in this_section:
+            this_section[index]={}
+        this_section=this_section[index]
+    return into
 
-class BigboySets(set):
-    def own(self, other):
-        diff=self^other
-        return {'removed':self&diff, 'added':other&diff}
-
-welp=BigboySets([1,2,3,4])
-
-
-def _own_xor(sa,sb):
+def dict_remove_from_paths(into, *paths):
     """
-    We need to make some assumptions; everything is a dict- or should be a dict.
-    Lists get transformed into dictlist which is just an enumerated .items()
-    We can then step through this process. 
-        diff keys and create two categories:
-            different keys, same keys
-        Diff same keys' vals to get two more categories:
-            different vals, same vals
-        Should now have three distinct categories:
-            different keys
-            different vals
-            same key (and val)
+    Dictionary removal that accepts slices as arguments. Useful for dumping 
+    out sub-dimensions of a dictionary when managing a huge structure.
+        - Create a path for each key to be removed
+        - Ensure entire path exists within structure
+        - Remove path
+    >>> dict_remove_from_paths({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (0,2))
+    {1: {1: 2, 2: 3}}
+    >>> dict_remove_from_paths({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, (1,2), (1,))
+    {0: 1, 1: {2: 3}, 2: {2: 3}}
     """
-    a,b=sa.copy(),sb.copy()
-    same_keys={k:v for k,v in sa.keys() if k in sb.keys()}
-    different_keys={k:v for k,v in sa.keys() if k not in sb.keys()}
-
-
-class OwnDict(dict):
-    def __xor__(self, other):
-        try:
-            return self.items()^other.items()
-        except:
-            return 'welpfuck'
-
-def differ(a,b):
-    result={}
-    for elem in a:
-        if not b.get(elem) or b.get(elem)!=a.get(elem):
-            result[elem]=a.get(elem)
-    return result
-
-def both(a, b, path=[]):
-    def diff_from_source(diff, source, *sources):
-        source=source.copy()
-        for s in sources:
-            source.update(s)
-        return dict(zip(diff, (source.get(k) for k in diff)))
-    def create_subdict_from_path(segment={}, path=[]):
-        for leaf in path[::-1]:
-            segment={leaf:segment}
-        return segment
-    def remainder_of(source, condition):
-        return {k:v for k,v in source.items() if condition(k,v)}
-    def is_iterable(v):
-        iterable_types=[type(c) for c in ((), [], {})]
-        return type(v) in iterable_types
-    def fix_types(t):
-        if type(t) in (type(c) for c in ((), [], set())):
-            return {k:v for k,v in enumerate(t)}
+    def paths_from_list(paths, sofar=()):
+        if paths:
+            for path in paths[0]:
+                for x in paths_from_list(paths[1:], sofar+(path,)):
+                    yield x
         else:
-            return t
-    a,b=fix_types(a),fix_types(b)
-    keydiff=a.keys()^b.keys()
-    key_and_val_diff=diff_from_source(keydiff, a, b)
-    added_keydict=diff_from_source(keydiff&b.keys(), b)
-    removed_keydict=diff_from_source(keydiff&a.keys(), a)
-    remainder_a=remainder_of(a, lambda k,v: k not in keydiff)
-    remainder_b=remainder_of(b, lambda k,v: k not in keydiff)
-    non_iterable_a=remainder_of(remainder_a, lambda k,v: not is_iterable(v))
-    non_iterable_b=remainder_of(remainder_b, lambda k,v: not is_iterable(v))
-    print(non_iterable_a)
-    print(non_iterable_b)
-    ta,tb=remainder_of(a, lambda k,v: not is_iterable(v)), remainder_of(b, lambda k,v: not is_iterable(v))
-    print('ta tb:', ta,tb)
-    print('ta xor tb: ', ta.items()^tb.items())
-    iterable_a=remainder_of(remainder_a, lambda k,v: is_iterable(v))
-    iterable_b=remainder_of(remainder_b, lambda k,v: is_iterable(v))
-    non_iterable_diff=non_iterable_a.items()^non_iterable_b.items()
-    added_non_iterables=dict(non_iterable_diff&non_iterable_b.items())
-    removed_non_iterables=dict(non_iterable_diff&non_iterable_a.items())
-    all_removed, all_added={}, {}
-    print('removed: ', removed_non_iterables, removed_keydict)
-    print('added: ', added_non_iterables, added_keydict)
-    for remove in (r for r in (removed_non_iterables, removed_keydict) if r):
-        all_removed.update(create_subdict_from_path(remove, path))
-    for add in (a for a in (added_non_iterables, added_keydict) if a):
-        all_added.update(create_subdict_from_path(add, path))
-    print('a: ', a)
-    print('b: ', b)
-    print('all_removed: ', all_removed)
-    print('all_added: ', all_added)
-    if iterable_a.keys()&iterable_b.keys():
-        for key in iterable_a.keys()&iterable_b.keys():
-            removed, added=both(iterable_a.get(key, {}), iterable_b.get(key, {}), path+[key])
-            all_added.update(added)
-            all_removed.update(removed)
-        return all_removed, all_added
-    else:
-        return all_removed, all_removed
+            yield sofar
+    def ensure_subpath_exists(into, path):
+        this_subsection=into
+        for elem in path:
+            if elem in this_subsection:
+                this_subsection=this_subsection[elem]
+            else:
+                return False
+        return True
+    for path in paths_from_list(paths):
+        if ensure_subpath_exists(into, path):
+            this_subsection=into
+            for elem in path[:-1]:
+                this_subsection=this_subsection[elem]
+            del this_subsection[path[-1]]
+    return into
 
+def dict_remove(into, _from):
+    """
+    Dict-remove that removes a dict from another dict, less usable than slice
+    remove for personal use but for removing diffs this is what is necessary.
+    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, {1:{1:2}})
+    {0: 1, 1: {2: 3}, 2: {1: 2, 2: 3}}
+    >>> dict_remove({0:1, 1:{1:2, 2:3}, 2:{1:2, 2:3}}, {1:{1:2, 2:3}, 2:{1:2}})
+    {0: 1, 1: {}, 2: {2: 3}}
+    """
+    for path, val in create_paths(_from):
+        this_section=into
+        for index in path[:-1]:
+            if index not in this_section:
+                break
+            this_section=this_section[index]
+        if this_section[path[-1]]==val:
+            del this_section[path[-1]]
+    return into
 
+def dict_insert(into, _from):
+    """
+    Proper dictionary insert that inserts at the deepest possible level as
+    opposed to the lowest possible level as is with dict.update().
+    For example, {0: {1: 2}}.update({0: {3: 4}}) completely removes the {1: 2}
+    pair in favour of {3: 4}. Insert overwrites values at the deepest level such
+    that {0: {1: 2}}.insert({0: {1: 3}}) would still replace {1: 2} with {1: 3} 
+    but in the case of the initial example, would instead return 
+    {0: {1: 2, 3: 4}}.
+    >>> dict_insert({0:{1:2}}, {0:{3:4}})
+    {0: {1: 2, 3: 4}}
+    >>> dict_insert({0:{1:2}}, {0:{1:3}})
+    {0: {1: 3}}
+    >>> dict_insert({0:{1:2}}, {0:{1:3, 3:4}})
+    {0: {1: 3, 3: 4}}
+    """
+    for path, val in create_paths(_from):
+        this_section=into
+        for index in path[:-1]:
+            if index not in this_section:
+                this_section[index]={}
+            this_section=this_section[index]
+        this_section.update({path[-1]:val})
+    return into
 
-
-
-aa=OwnDict({'a':'b'})
-bb=OwnDict({'c':'d'})
-
-sa={'a':'b', 'b':'c', 'd':[1,2,3,4], 'e':{'f':'g', 'h':'l'}, 'f':'g'}
-sb={'a':'b', 'b':'b', 'd':[1,3,2], 'e':{'f':'f'}, 'g':'i'}
-
+def create_paths(d, path=()):
+    """
+    Breaks a dict into path - value pairs.
+    Recursively descends into a dict structure yielding path-value pairs as
+    they are discovered for every leaf in the structure. This has the quality
+    of returning nothing for a dict with no leaves such as {0: {1: {}}}.
+    >>> dict(create_paths({0: {1: {5: {20: {}}}}}))
+    {}
+    >>> dict(create_paths({0: {1: 2, 3: {4: 5}}, 6: 7}))
+    {(0, 1): 2, (0, 3, 4): 5, (6,): 7}
+    """
+    for k,v in d.items():
+        if isinstance(v, type({})):
+            for iterable in create_paths(v, path+(k,)):
+                yield iterable
+        else:
+            yield path+(k,),v
